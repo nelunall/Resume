@@ -54,8 +54,22 @@ const SKILLS = [
   { id: 'leadership', type: 'soft', en: 'Leadership', ar: 'القيادة', aliases: ['team lead'] },
   { id: 'problemsolving', type: 'soft', en: 'Problem Solving', ar: 'حل المشكلات', aliases: ['critical thinking', 'التفكير النقدي'] },
   { id: 'english', type: 'soft', en: 'Business English', ar: 'اللغة الإنجليزية', aliases: ['english', 'ielts', 'toefl', 'الإنجليزية'] },
-  { id: 'customerservice', type: 'soft', en: 'Customer Service', ar: 'خدمة العملاء', aliases: ['customer experience'] }
+  { id: 'customerservice', type: 'soft', en: 'Customer Service', ar: 'خدمة العملاء', aliases: ['customer experience'] },
+  { id: 'timemgmt', type: 'soft', en: 'Time Management', ar: 'إدارة الوقت', aliases: ['time management', 'تنظيم الوقت'] },
+  { id: 'stress', type: 'soft', en: 'Working Under Pressure', ar: 'تحمل ضغط العمل', aliases: ['stress management', 'pressure', 'تحمل الضغوط', 'العمل تحت الضغط', 'تحمل الضغط'] },
+  { id: 'adaptability', type: 'soft', en: 'Adaptability', ar: 'المرونة والتكيف', aliases: ['flexibility', 'المرونة'] },
+  { id: 'detail', type: 'soft', en: 'Attention to Detail', ar: 'الدقة والاهتمام بالتفاصيل', aliases: ['accuracy', 'الدقة'] },
+  { id: 'negotiation', type: 'soft', en: 'Negotiation', ar: 'التفاوض', aliases: [] },
+  { id: 'creativity', type: 'soft', en: 'Creativity', ar: 'الإبداع', aliases: ['innovation', 'الابتكار'] },
+  { id: 'decision', type: 'soft', en: 'Decision Making', ar: 'اتخاذ القرار', aliases: [] },
+  { id: 'office', type: 'tech', en: 'Microsoft Office', ar: 'مايكروسوفت أوفيس', aliases: ['ms office', 'word', 'powerpoint', 'وورد', 'باوربوينت'] },
+  { id: 'arabic', type: 'soft', en: 'Arabic Language', ar: 'اللغة العربية', aliases: ['arabic', 'العربية'] },
+  { id: 'french', type: 'soft', en: 'French Language', ar: 'اللغة الفرنسية', aliases: ['french', 'الفرنسية'] },
+  { id: 'chinese', type: 'soft', en: 'Chinese Language', ar: 'اللغة الصينية', aliases: ['chinese', 'mandarin', 'الصينية'] }
 ];
+
+/* Shown as quick-add chips under the Skills field. */
+const POPULAR_SKILLS = ['timemgmt', 'stress', 'communication', 'teamwork', 'problemsolving', 'leadership', 'english', 'arabic', 'french', 'chinese', 'adaptability', 'detail', 'office', 'creativity', 'negotiation', 'decision'];
 
 /* skills: [skillId, weight]  3 = high demand, 2 = in demand, 1 = valued */
 const COMPANIES = [
@@ -64,7 +78,7 @@ const COMPANIES = [
     sector: { en: 'Energy', ar: 'الطاقة' }, city: { en: 'Dhahran', ar: 'الظهران' },
     about: { en: 'Integrated energy and chemicals company with operations across the Kingdom.', ar: 'شركة متكاملة للطاقة والكيميائيات بعمليات في أنحاء المملكة.' },
     majors: ['petroleum', 'chemical', 'mechanical', 'electrical', 'data', 'cyber', 'software'],
-    skills: [['reservoir', 3], ['drilling', 3], ['hse', 3], ['python', 2], ['dataanalysis', 2], ['processdesign', 2], ['pm', 2], ['teamwork', 2], ['english', 2], ['problemsolving', 2], ['matlab', 1]],
+    skills: [['reservoir', 3], ['drilling', 3], ['hse', 3], ['python', 2], ['dataanalysis', 2], ['processdesign', 2], ['pm', 2], ['teamwork', 2], ['english', 2], ['problemsolving', 2], ['matlab', 1], ['timemgmt', 2], ['stress', 2]],
     coop: { weeks: 28, season: { en: 'Year-round', ar: 'طوال العام' } }
   },
   {
@@ -72,7 +86,7 @@ const COMPANIES = [
     sector: { en: 'Petrochemicals', ar: 'البتروكيماويات' }, city: { en: 'Riyadh', ar: 'الرياض' },
     about: { en: 'Global leader in diversified chemicals and materials.', ar: 'شركة رائدة عالمياً في الكيماويات والمواد المتنوعة.' },
     majors: ['chemical', 'mechanical', 'data', 'supply', 'finance'],
-    skills: [['processdesign', 3], ['hse', 3], ['dataanalysis', 2], ['sap', 2], ['matlab', 2], ['problemsolving', 2], ['english', 2], ['pm', 1]],
+    skills: [['processdesign', 3], ['hse', 3], ['dataanalysis', 2], ['sap', 2], ['matlab', 2], ['problemsolving', 2], ['english', 2], ['pm', 1], ['timemgmt', 2], ['detail', 2]],
     coop: { weeks: 24, season: { en: 'Spring & Fall', ar: 'الربيع والخريف' } }
   },
   {
@@ -80,7 +94,7 @@ const COMPANIES = [
     sector: { en: 'Telecom & Digital', ar: 'الاتصالات والتقنية' }, city: { en: 'Riyadh', ar: 'الرياض' },
     about: { en: 'Digital enabler providing telecom, cloud and cybersecurity services.', ar: 'ممكّن رقمي يقدم خدمات الاتصالات والسحابة والأمن السيبراني.' },
     majors: ['software', 'data', 'cyber', 'marketing'],
-    skills: [['cloud', 3], ['netsec', 3], ['javascript', 2], ['java', 2], ['python', 2], ['ml', 2], ['agile', 2], ['customerservice', 2], ['communication', 2], ['digitalmkt', 1]],
+    skills: [['cloud', 3], ['netsec', 3], ['javascript', 2], ['java', 2], ['python', 2], ['ml', 2], ['agile', 2], ['customerservice', 2], ['communication', 2], ['digitalmkt', 1], ['stress', 2], ['adaptability', 1]],
     coop: { weeks: 24, season: { en: 'Year-round', ar: 'طوال العام' } }
   },
   {
@@ -88,7 +102,7 @@ const COMPANIES = [
     sector: { en: 'Banking', ar: 'المصارف' }, city: { en: 'Riyadh', ar: 'الرياض' },
     about: { en: 'One of the largest Islamic banks in the world.', ar: 'من أكبر المصارف الإسلامية في العالم.' },
     majors: ['finance', 'cyber', 'software', 'data', 'marketing'],
-    skills: [['ifrs', 3], ['finmodel', 3], ['excel', 2], ['sql', 2], ['netsec', 2], ['powerbi', 2], ['customerservice', 2], ['communication', 2]],
+    skills: [['ifrs', 3], ['finmodel', 3], ['excel', 2], ['sql', 2], ['netsec', 2], ['powerbi', 2], ['customerservice', 2], ['communication', 2], ['detail', 2], ['arabic', 1]],
     coop: { weeks: 16, season: { en: 'Summer', ar: 'الصيف' } }
   },
   {
@@ -96,7 +110,7 @@ const COMPANIES = [
     sector: { en: 'Giga-project', ar: 'المشاريع الكبرى' }, city: { en: 'Tabuk', ar: 'تبوك' },
     about: { en: 'A new region in northwest Saudi Arabia built around sustainability and technology.', ar: 'منطقة جديدة في شمال غرب المملكة قائمة على الاستدامة والتقنية.' },
     majors: ['architecture', 'software', 'data', 'electrical', 'supply'],
-    skills: [['bim', 3], ['urban', 3], ['pm', 3], ['ml', 2], ['python', 2], ['powersys', 2], ['autocad', 2], ['english', 2], ['leadership', 2]],
+    skills: [['bim', 3], ['urban', 3], ['pm', 3], ['ml', 2], ['python', 2], ['powersys', 2], ['autocad', 2], ['english', 2], ['leadership', 2], ['adaptability', 2], ['creativity', 2]],
     coop: { weeks: 24, season: { en: 'Year-round', ar: 'طوال العام' } }
   },
   {
@@ -104,7 +118,7 @@ const COMPANIES = [
     sector: { en: 'Banking', ar: 'المصارف' }, city: { en: 'Riyadh', ar: 'الرياض' },
     about: { en: 'The largest bank in Saudi Arabia by assets.', ar: 'أكبر بنك في المملكة من حيث الأصول.' },
     majors: ['finance', 'data', 'cyber', 'hr'],
-    skills: [['ifrs', 3], ['finmodel', 3], ['excel', 3], ['sql', 2], ['powerbi', 2], ['pentest', 2], ['communication', 2], ['recruitment', 1]],
+    skills: [['ifrs', 3], ['finmodel', 3], ['excel', 3], ['sql', 2], ['powerbi', 2], ['pentest', 2], ['communication', 2], ['recruitment', 1], ['detail', 2], ['office', 2]],
     coop: { weeks: 16, season: { en: 'Summer', ar: 'الصيف' } }
   },
   {
@@ -112,7 +126,7 @@ const COMPANIES = [
     sector: { en: 'Mining', ar: 'التعدين' }, city: { en: 'Riyadh', ar: 'الرياض' },
     about: { en: 'Mining and metals company developing the Kingdom’s mineral resources.', ar: 'شركة تعدين ومعادن تطور الثروات المعدنية في المملكة.' },
     majors: ['mechanical', 'chemical', 'electrical', 'supply'],
-    skills: [['hse', 3], ['processdesign', 2], ['autocad', 2], ['plc', 2], ['procurement', 2], ['sap', 2], ['teamwork', 2], ['pm', 2]],
+    skills: [['hse', 3], ['processdesign', 2], ['autocad', 2], ['plc', 2], ['procurement', 2], ['sap', 2], ['teamwork', 2], ['pm', 2], ['negotiation', 2], ['stress', 1]],
     coop: { weeks: 24, season: { en: 'Spring & Fall', ar: 'الربيع والخريف' } }
   },
   {
@@ -120,7 +134,7 @@ const COMPANIES = [
     sector: { en: 'Utilities', ar: 'المرافق' }, city: { en: 'Riyadh', ar: 'الرياض' },
     about: { en: 'Generates, transmits and distributes electricity across the Kingdom.', ar: 'تولّد الكهرباء وتنقلها وتوزعها في أنحاء المملكة.' },
     majors: ['electrical', 'mechanical', 'data', 'cyber'],
-    skills: [['powersys', 3], ['plc', 3], ['hse', 2], ['matlab', 2], ['autocad', 2], ['dataanalysis', 2], ['netsec', 2], ['problemsolving', 2]],
+    skills: [['powersys', 3], ['plc', 3], ['hse', 2], ['matlab', 2], ['autocad', 2], ['dataanalysis', 2], ['netsec', 2], ['problemsolving', 2], ['stress', 2], ['timemgmt', 1]],
     coop: { weeks: 24, season: { en: 'Year-round', ar: 'طوال العام' } }
   },
   {
@@ -128,7 +142,7 @@ const COMPANIES = [
     sector: { en: 'Technology', ar: 'التقنية' }, city: { en: 'Riyadh', ar: 'الرياض' },
     about: { en: 'Digital solutions provider for government and private sectors.', ar: 'مزود حلول رقمية للقطاعين الحكومي والخاص.' },
     majors: ['software', 'data', 'cyber', 'hr'],
-    skills: [['javascript', 3], ['java', 3], ['agile', 3], ['python', 2], ['cloud', 2], ['ml', 2], ['pentest', 2], ['sql', 2], ['problemsolving', 2]],
+    skills: [['javascript', 3], ['java', 3], ['agile', 3], ['python', 2], ['cloud', 2], ['ml', 2], ['pentest', 2], ['sql', 2], ['problemsolving', 2], ['timemgmt', 2], ['creativity', 1]],
     coop: { weeks: 24, season: { en: 'Year-round', ar: 'طوال العام' } }
   },
   {
@@ -136,7 +150,7 @@ const COMPANIES = [
     sector: { en: 'Aviation', ar: 'الطيران' }, city: { en: 'Jeddah', ar: 'جدة' },
     about: { en: 'The national flag carrier of Saudi Arabia.', ar: 'الناقل الجوي الوطني للمملكة العربية السعودية.' },
     majors: ['mechanical', 'marketing', 'supply', 'hr', 'finance'],
-    skills: [['customerservice', 3], ['english', 3], ['communication', 3], ['digitalmkt', 2], ['procurement', 2], ['recruitment', 2], ['excel', 2], ['teamwork', 2]],
+    skills: [['customerservice', 3], ['english', 3], ['communication', 3], ['digitalmkt', 2], ['procurement', 2], ['recruitment', 2], ['excel', 2], ['teamwork', 2], ['stress', 3], ['timemgmt', 2], ['arabic', 2], ['french', 1], ['office', 1]],
     coop: null
   },
   {
@@ -144,7 +158,7 @@ const COMPANIES = [
     sector: { en: 'Food & Beverage', ar: 'الأغذية والمشروبات' }, city: { en: 'Riyadh', ar: 'الرياض' },
     about: { en: 'Large vertically integrated food and beverage manufacturer.', ar: 'شركة كبرى متكاملة لتصنيع الأغذية والمشروبات.' },
     majors: ['supply', 'marketing', 'finance', 'chemical'],
-    skills: [['sap', 3], ['procurement', 3], ['branding', 2], ['digitalmkt', 2], ['excel', 2], ['finmodel', 2], ['hse', 2], ['leadership', 2]],
+    skills: [['sap', 3], ['procurement', 3], ['branding', 2], ['digitalmkt', 2], ['excel', 2], ['finmodel', 2], ['hse', 2], ['leadership', 2], ['negotiation', 2], ['timemgmt', 2]],
     coop: { weeks: 12, season: { en: 'Summer', ar: 'الصيف' } }
   },
   {
@@ -152,7 +166,7 @@ const COMPANIES = [
     sector: { en: 'Renewable Energy', ar: 'الطاقة المتجددة' }, city: { en: 'Riyadh', ar: 'الرياض' },
     about: { en: 'Developer and operator of power generation and water desalination plants.', ar: 'مطور ومشغل لمحطات توليد الكهرباء وتحلية المياه.' },
     majors: ['electrical', 'mechanical', 'chemical', 'finance'],
-    skills: [['powersys', 3], ['hse', 3], ['pm', 3], ['processdesign', 2], ['finmodel', 2], ['english', 2], ['matlab', 1]],
+    skills: [['powersys', 3], ['hse', 3], ['pm', 3], ['processdesign', 2], ['finmodel', 2], ['english', 2], ['matlab', 1], ['decision', 2], ['chinese', 1]],
     coop: { weeks: 24, season: { en: 'Spring & Fall', ar: 'الربيع والخريف' } }
   },
   {
@@ -160,7 +174,7 @@ const COMPANIES = [
     sector: { en: 'Tourism & Development', ar: 'السياحة والتطوير' }, city: { en: 'Riyadh', ar: 'الرياض' },
     about: { en: 'Developer of regenerative tourism destinations on the Red Sea coast.', ar: 'مطور لوجهات سياحية مستدامة على ساحل البحر الأحمر.' },
     majors: ['architecture', 'marketing', 'hr', 'supply'],
-    skills: [['urban', 3], ['branding', 3], ['bim', 2], ['digitalmkt', 2], ['customerservice', 2], ['recruitment', 2], ['pm', 2], ['english', 2]],
+    skills: [['urban', 3], ['branding', 3], ['bim', 2], ['digitalmkt', 2], ['customerservice', 2], ['recruitment', 2], ['pm', 2], ['english', 2], ['creativity', 2], ['french', 1]],
     coop: null
   },
   {
@@ -168,7 +182,7 @@ const COMPANIES = [
     sector: { en: 'Banking', ar: 'المصارف' }, city: { en: 'Riyadh', ar: 'الرياض' },
     about: { en: 'Leading Saudi bank with a growing digital banking arm.', ar: 'بنك سعودي رائد بذراع متنامية للخدمات المصرفية الرقمية.' },
     majors: ['finance', 'data', 'software', 'marketing'],
-    skills: [['finmodel', 3], ['powerbi', 3], ['ifrs', 2], ['sql', 2], ['python', 2], ['excel', 2], ['agile', 2], ['communication', 2], ['digitalmkt', 1]],
+    skills: [['finmodel', 3], ['powerbi', 3], ['ifrs', 2], ['sql', 2], ['python', 2], ['excel', 2], ['agile', 2], ['communication', 2], ['digitalmkt', 1], ['detail', 2], ['decision', 1]],
     coop: { weeks: 16, season: { en: 'Summer', ar: 'الصيف' } }
   }
 ];
@@ -287,6 +301,14 @@ const QUESTIONS = {
   english: [
     ['Choose the correct sentence.', 'اختر الجملة الصحيحة.', ['She have finished the report.', 'She has finished the report.', 'She finish the report yesterday.', 'She finishing the report.'], null, 1],
     ['"Could you please send the file by EOD?" EOD means…', 'في عبارة "send the file by EOD" تعني EOD…', ['End of day', 'Every other day', 'End of deal', 'Early on delivery'], ['نهاية يوم العمل', 'كل يومين', 'نهاية الصفقة', 'تسليم مبكر'], 0]
+  ],
+  timemgmt: [
+    ['You have three tasks due today and one is urgent for your manager. What do you do first?', 'لديك ثلاث مهام مستحقة اليوم وإحداها عاجلة لمديرك. ماذا تفعل أولاً؟', ['Prioritize by urgency and impact, then start the urgent one', 'Do the easiest task first', 'Wait until the end of the day', 'Work on all three at once'], ['أرتّبها حسب الأهمية والإلحاح وأبدأ بالعاجلة', 'أبدأ بالمهمة الأسهل', 'أنتظر حتى نهاية اليوم', 'أعمل على الثلاث في وقت واحد'], 0],
+    ['Which tool best helps you plan your work week?', 'أي أداة تساعدك أكثر على تخطيط أسبوع العمل؟', ['A prioritized task list with deadlines', 'Checking email every five minutes', 'Accepting every meeting invite', 'No plan, just react'], ['قائمة مهام مرتبة بمواعيد نهائية', 'تفقد البريد كل خمس دقائق', 'قبول كل دعوة اجتماع', 'بلا خطة، فقط التفاعل'], 0]
+  ],
+  stress: [
+    ['A system fails right before a deadline. The best first step is to…', 'تعطل نظام قبل الموعد النهائي مباشرة. أفضل خطوة أولى هي…', ['Stay calm, assess the impact and tell the team', 'Panic and stop working', 'Hide the problem', 'Blame a colleague'], ['أهدأ وأقيّم الأثر وأبلغ الفريق', 'أرتبك وأتوقف عن العمل', 'أخفي المشكلة', 'ألوم زميلاً'], 0],
+    ['Which habit helps most during long, high-pressure periods?', 'أي عادة تساعد أكثر خلال فترات الضغط الطويلة؟', ['Short breaks and breaking work into steps', 'Skipping sleep', 'Taking on extra tasks', 'Avoiding all communication'], ['فترات راحة قصيرة وتقسيم العمل إلى خطوات', 'تقليل النوم', 'تحمّل مهام إضافية', 'تجنب التواصل تماماً'], 0]
   ],
   customerservice: [
     ['An angry customer calls. You should first…', 'عميل غاضب يتصل. يجب أولاً…', ['Listen and acknowledge the issue', 'Transfer them right away', 'Quote the policy', 'End the call'], ['الاستماع والإقرار بالمشكلة', 'تحويله فوراً', 'ذكر السياسة', 'إنهاء المكالمة'], 0],

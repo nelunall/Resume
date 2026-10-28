@@ -226,7 +226,7 @@
       '<p class="mock-name">' + (S.lang === 'ar' ? 'سارة القحطاني' : 'Sara Alqahtani') + '</p>' +
       '<p class="mock-title">' + esc(L(findMajor('petroleum').role)) + '</p>' +
       '<p class="mock-h">' + t('pvSummary') + '</p><span class="mock-line" style="width:92%"></span><span class="mock-line" style="width:80%"></span>' +
-      '<p class="mock-h">' + t('pvSkills') + '</p><div class="mock-chips">' + chip('reservoir', true) + chip('python') + chip('hse', true) + chip('teamwork') + '</div>' +
+      '<p class="mock-h">' + t('pvSkills') + '</p><div class="mock-chips">' + chip('reservoir', true) + chip('timemgmt') + chip('hse', true) + chip('teamwork') + '</div>' +
       '<p class="mock-h">' + t('pvExperience') + '</p><span class="mock-line" style="width:88%"></span><span class="mock-line" style="width:70%"></span><span class="mock-line" style="width:76%"></span>' +
       '</div>' +
       '<div class="mock-gauge">' +
@@ -435,7 +435,8 @@
       experience: [{ role: '', org: '', start: '', end: '', details: '' }],
       highlights: [{ area: '', details: '' }],
       education: [{ degree: '', school: '', year: '', gpa: '' }],
-      certs: ''
+      certs: '',
+      certFiles: []
     };
   }
 
@@ -443,6 +444,11 @@
     /* One draft per user: switching company keeps what they already typed. */
     if (!S.draft) S.draft = { companyId: cid, format: fmt, coop: !!coop, data: blankData() };
     S.draft.companyId = cid;
+    /* Abilities used to be a separate list; fold any old entries into Skills. */
+    const d = S.draft.data;
+    if (d.abilities && d.abilities.length) { d.abilities.forEach((a) => { if (!d.skills.includes(a)) d.skills.push(a); }); }
+    d.abilities = [];
+    if (!d.certFiles) d.certFiles = [];
     S.draft.format = fmt;
     S.draft.coop = !!coop;
     saveDraft();
@@ -455,9 +461,9 @@
   }
 
   const SECTION_ORDER = {
-    chronological: ['personal', 'summary', 'experience', 'education', 'skills', 'abilities', 'certs'],
-    functional: ['personal', 'summary', 'skills', 'abilities', 'highlights', 'history', 'education', 'certs'],
-    hybrid: ['personal', 'summary', 'skills', 'abilities', 'experience', 'education', 'certs']
+    chronological: ['personal', 'summary', 'experience', 'education', 'skills', 'certs'],
+    functional: ['personal', 'summary', 'skills', 'highlights', 'history', 'education', 'certs'],
+    hybrid: ['personal', 'summary', 'skills', 'experience', 'education', 'certs']
   };
 
   function input(o) {
@@ -498,16 +504,63 @@
     }).join('');
   }
 
+  function popularChips() {
+    const have = new Set(S.draft.data.skills.map((x) => { const sk = matchSkill(x); return sk ? sk.id : ''; }));
+    const items = POPULAR_SKILLS.filter((id) => !have.has(id)).map(findSkill);
+    if (!items.length) return '';
+    return '<p class="label popular-label">' + t('popular') + ' <span class="muted">· ' + t('popularH') + '</span></p>' +
+      '<div class="chips">' + items.map((sk) => '<button type="button" class="chip chip-add" data-action="boost" data-id="' + sk.id + '">' + icon('plus') + esc(L(sk)) + '</button>').join('') + '</div>';
+  }
+
   function tagField(list) {
-    const label = list === 'skills' ? t('secSkills') : t('secAbilities');
+    const label = t('secSkills');
     const id = 'f-' + list;
     return '<div class="field wide"><label for="' + id + '">' + label + '</label>' +
-      '<p class="help" id="' + id + '-help">' + (list === 'skills' ? t('fSkillsH') : t('fAbilitiesH')) + '</p>' +
+      '<p class="help" id="' + id + '-help">' + t('fSkillsH') + '</p>' +
       '<ul class="tag-list" id="' + list + '-tags" aria-label="' + esc(label) + '">' + tagList(list) + '</ul>' +
       '<div class="tag-entry"><input id="' + id + '" type="text" dir="auto" data-tag-input="' + list + '" list="skill-options-' + list + '" aria-describedby="' + id + '-help ' + id + '-err" autocomplete="off">' +
       '<button type="button" class="btn btn-ghost" data-action="add-tag" data-list="' + list + '">' + icon('plus') + t('add') + '</button></div>' +
       '<p class="field-error" id="' + id + '-err" hidden></p>' +
-      '<datalist id="skill-options-' + list + '">' + SKILLS.filter((s) => (list === 'skills' ? s.type === 'tech' : s.type === 'soft')).map((s) => '<option value="' + esc(L(s)) + '"></option>').join('') + '</datalist></div>';
+      '<div id="popular-skills">' + popularChips() + '</div>' +
+      '<datalist id="skill-options-' + list + '">' + SKILLS.map((s) => '<option value="' + esc(L(s)) + '"></option>').join('') + '</datalist></div>';
+  }
+
+  function fmtSize(b) {
+    return b >= 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB';
+  }
+
+  function certFileList() {
+    return S.draft.data.certFiles.map((f, i) =>
+      '<li class="file-item">' + icon('file') + '<span class="file-name" dir="auto">' + esc(f.name) + '</span><span class="muted small">' + fmtSize(f.size) + '</span>' +
+      '<button type="button" class="tag-remove" data-action="remove-file" data-index="' + i + '" aria-label="' + esc(t('removeFile', { f: f.name })) + '">' + icon('x') + '</button></li>').join('');
+  }
+
+  function certUpload() {
+    return '<div class="field wide"><span class="field-label" id="cert-files-label">' + t('fCertFiles') + '</span>' +
+      '<p class="help" id="cert-files-help">' + t('fCertFilesH') + '</p>' +
+      '<div class="file-drop" id="file-drop">' + icon('upload', 'drop-icon') +
+      '<button type="button" class="btn btn-ghost" data-action="pick-files" aria-describedby="cert-files-label cert-files-help">' + icon('clip') + t('chooseFiles') + '</button>' +
+      '<span class="muted small">' + t('dropHint') + '</span>' +
+      '<input type="file" id="f-cert-files" class="sr-only" tabindex="-1" aria-hidden="true" multiple accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg">' +
+      '</div><ul class="file-list" id="cert-files">' + certFileList() + '</ul></div>';
+  }
+
+  function addCertFiles(fileList) {
+    const okTypes = ['application/pdf', 'image/png', 'image/jpeg'];
+    let added = 0;
+    Array.from(fileList || []).forEach((f) => {
+      const extOk = /\.(pdf|png|jpe?g)$/i.test(f.name);
+      if (!okTypes.includes(f.type) && !extOk) { toast(t('fileType', { f: f.name })); return; }
+      if (f.size > 5 * 1048576) { toast(t('fileTooBig', { f: f.name })); return; }
+      if (S.draft.data.certFiles.some((x) => x.name === f.name && x.size === f.size)) return;
+      S.draft.data.certFiles.push({ name: f.name, size: f.size, type: f.type });
+      added++;
+    });
+    if (added) {
+      $('#cert-files').innerHTML = certFileList();
+      refreshBuilder();
+      announce(t('attached') + ': ' + added);
+    }
   }
 
   function repeatGroup(list, legendKey, fields, addKey) {
@@ -540,7 +593,6 @@
       case 'summary':
         return wrap('secSummary', input({ bind: 'summary', label: t('fSummary'), value: d.summary, textarea: true, rows: 4, help: t('fSummaryH'), wide: true }));
       case 'skills': return wrap('secSkills', tagField('skills'));
-      case 'abilities': return wrap('secAbilities', tagField('abilities'));
       case 'experience':
         return wrap('secExperience', '<div id="list-experience">' + repeatGroup('experience', 'secExperience',
           expFields.concat([{ key: 'details', label: t('fDetails'), textarea: true, rows: 3, help: t('fDetailsH'), wide: true }]), 'addExp') + '</div>');
@@ -557,7 +609,7 @@
           { key: 'year', label: t('fYear'), inputmode: 'numeric' }, { key: 'gpa', label: t('fGpa'), ph: '4.5 / 5' }
         ], 'addEdu') + '</div>');
       case 'certs':
-        return wrap('secCerts', input({ bind: 'certs', label: t('fCerts'), value: d.certs, textarea: true, rows: 3, help: t('fCertsH'), wide: true }));
+        return wrap('secCerts', '<div class="field-grid">' + input({ bind: 'certs', label: t('fCerts'), value: d.certs, textarea: true, rows: 3, help: t('fCertsH'), wide: true }) + certUpload() + '</div>');
       default: return '';
     }
   }
@@ -635,15 +687,19 @@
     let body = '';
     if (fmt === 'chronological') {
       body = sec('pvSummary', summary) + sec('pvExperience', expFull()) + sec('pvEducation', edu()) +
-        sec('pvSkills', chipsList(d.skills)) + sec('pvAbilities', chipsList(d.abilities));
+        sec('pvSkills', chipsList(d.skills));
     } else if (fmt === 'functional') {
-      body = sec('pvSummary', summary) + sec('pvSkills', chipsList(d.skills)) + sec('pvAbilities', chipsList(d.abilities)) +
+      body = sec('pvSummary', summary) + sec('pvSkills', chipsList(d.skills)) +
         sec('pvHighlights', highlights()) + sec('pvHistory', expShort()) + sec('pvEducation', edu());
     } else {
-      body = sec('pvSummary', summary) + '<div class="pv-two">' + sec('pvSkills', chipsList(d.skills)) + sec('pvAbilities', chipsList(d.abilities)) + '</div>' +
+      body = sec('pvSummary', summary) + sec('pvSkills', chipsList(d.skills)) +
         sec('pvExperience', expFull()) + sec('pvEducation', edu());
     }
-    if (certs.length) body += sec('pvCerts', '<ul>' + certs.map((c) => '<li>' + esc(c) + '</li>').join('') + '</ul>');
+    const files = d.certFiles || [];
+    if (certs.length || files.length) {
+      body += sec('pvCerts', '<ul>' + certs.map((c) => '<li>' + esc(c) + '</li>').join('') +
+        files.map((f) => '<li class="pv-file">' + esc(f.name) + ' <span class="pv-date">(' + t('attached') + ')</span></li>').join('') + '</ul>');
+    }
 
     return '<header class="pv-head"><p class="pv-name' + (d.name ? '' : ' empty') + '">' + esc(d.name || t('pvName')) + '</p>' +
       '<p class="pv-title' + (d.title ? '' : ' empty') + '">' + esc(d.title || t('pvTitle')) + '</p>' +
@@ -680,7 +736,8 @@
     const p = $('#preview');
     if (p) p.innerHTML = previewHTML();
     if (opts && opts.tags) {
-      ['skills', 'abilities'].forEach((l) => { const ul = $('#' + l + '-tags'); if (ul) ul.innerHTML = tagList(l); });
+      ['skills'].forEach((l) => { const ul = $('#' + l + '-tags'); if (ul) ul.innerHTML = tagList(l); });
+      const pop = $('#popular-skills'); if (pop) pop.innerHTML = popularChips();
       const si = $('#f-skills');
       if (si && si.getAttribute('aria-invalid')) { si.removeAttribute('aria-invalid'); $('#f-skills-err').hidden = true; }
     }
@@ -1152,7 +1209,7 @@
       }
       case 'boost': {
         const sk = findSkill(el.dataset.id);
-        const list = sk.type === 'soft' ? 'abilities' : 'skills';
+        const list = 'skills';
         addTags(list, L(sk));
         refreshBuilder({ tags: true });
         const next = $('[data-action="boost"]') || $('#f-' + list);
@@ -1172,6 +1229,14 @@
         const list = el.dataset.list;
         S.draft.data[list].splice(Number(el.dataset.index), 1);
         rerenderSections('[data-action="add-item"][data-list="' + list + '"]');
+        break;
+      }
+      case 'pick-files': { const fi = $('#f-cert-files'); if (fi) fi.click(); break; }
+      case 'remove-file': {
+        S.draft.data.certFiles.splice(Number(el.dataset.index), 1);
+        $('#cert-files').innerHTML = certFileList();
+        refreshBuilder();
+        $('[data-action="pick-files"]').focus();
         break;
       }
       case 'focus-field': {
@@ -1237,6 +1302,7 @@
   });
 
   document.addEventListener('change', (e) => {
+    if (e.target.id === 'f-cert-files') { addCertFiles(e.target.files); e.target.value = ''; return; }
     if (e.target.name === 'answer') { const b = $('#next-btn'); if (b) b.disabled = false; }
   });
 
@@ -1249,6 +1315,19 @@
       el.value = '';
     }
     if (e.key === 'Escape' && S.notifOpen) { S.notifOpen = false; renderHeader(); $('[data-action="notif"]').focus(); }
+  });
+
+  document.addEventListener('dragover', (e) => {
+    const z = e.target.closest && e.target.closest('#file-drop');
+    if (z) { e.preventDefault(); z.classList.add('over'); }
+  });
+  document.addEventListener('dragleave', (e) => {
+    const z = e.target.closest && e.target.closest('#file-drop');
+    if (z) z.classList.remove('over');
+  });
+  document.addEventListener('drop', (e) => {
+    const z = e.target.closest && e.target.closest('#file-drop');
+    if (z) { e.preventDefault(); z.classList.remove('over'); addCertFiles(e.dataTransfer.files); }
   });
 
   window.addEventListener('popstate', (e) => {
