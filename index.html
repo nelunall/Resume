@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Masar — Saudi Careers</title>
+  <title>Majra — Saudi Careers</title>
   <meta name="description" content="Find roles at Saudi companies, build a resume matched to what they want, and prove your skills.">
   <meta name="color-scheme" content="dark light">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,8 +14,8 @@
     /* Apply saved theme and language before first paint to avoid a flash. */
     (function () {
       try {
-        var t = localStorage.getItem('masar.theme');
-        var l = localStorage.getItem('masar.lang');
+        var t = localStorage.getItem('majra.theme');
+        var l = localStorage.getItem('majra.lang');
         if (t) document.documentElement.dataset.theme = t;
         if (l === 'ar') { document.documentElement.lang = 'ar'; document.documentElement.dir = 'rtl'; }
       } catch (e) {}
@@ -28,7 +28,6 @@
   <main id="main" tabindex="-1"></main>
   <footer class="site-footer" id="site-footer"></footer>
 
-  <dialog class="modal" id="login-dialog" aria-labelledby="login-title"></dialog>
   <div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="true"></div>
 
   <script src="assets/js/data.js"></script>

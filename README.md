@@ -1,4 +1,4 @@
-# Masar (مسار) — Saudi careers prototype
+# Majra (مجرى) — Saudi careers prototype
 
 A front-end prototype of a job-seeking platform for Saudi companies, in English and Arabic (RTL), with dark and light modes.
 
@@ -7,9 +7,9 @@ A front-end prototype of a job-seeking platform for Saudi companies, in English 
 2. **Company**: open roles, skills in demand, co-op program, then **Start your resume**.
 3. **Format**: chronological, functional or hybrid, each with a short description.
 4. **Builder**: a blank template to fill in, with a live preview. The **smart gauge** scores how well the listed skills and abilities match what the company wants and suggests missing ones. **Save as PDF** uses the browser's print dialog.
-5. **Submit**: leads to a timed **skills assessment** on the listed skills, then a results page.
+5. **Submit**: leads to a timed **skills assessment** on the listed skills. Answers go to the company; the candidate sees a submission confirmation, not a score.
 
-Also: Companies, Majors and Co-op pages, demo login, notifications, and a language and theme toggle.
+Also: Companies, Majors and Co-op pages, a login / create-account page (demo), notifications, and language and theme toggles. The layout is desktop-first; on small screens the 1280px page is scaled to fit.
 
 ## Run
 No build step. Open `index.html`, or serve the folder:

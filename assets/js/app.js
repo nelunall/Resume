@@ -1,11 +1,11 @@
-/* Masar: single-page app with hash routes.
+/* Majra: single-page app with in-memory routes (mirrored to #/path when opened directly).
    Routes: #/  #/companies  #/company/:id  #/majors  #/major/:id  #/coop  #/search/:q
            #/resume/:companyId[/coop]  #/builder/:companyId/:format  #/assessment */
 (function () {
   'use strict';
 
   /* ---------- Storage (wrapped: can fail in private mode) ---------- */
-  const PREFIX = 'masar.';
+  const PREFIX = 'majra.';
   const store = {
     get(k, d) { try { const v = localStorage.getItem(PREFIX + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
     set(k, v) { try { localStorage.setItem(PREFIX + k, JSON.stringify(v)); } catch (e) { /* ignore */ } },
@@ -28,8 +28,9 @@
     quiz: null,
     timer: null,
     notifOpen: false,
-    menuOpen: false,
-    previewOpen: false,
+    loginMode: 'signin',
+    afterLogin: '',
+    path: '',
     lastLevel: null,
     firstRender: true
   };
@@ -143,6 +144,21 @@
     return S.extraNotifs.concat(NOTIFICATIONS);
   }
 
+  function brandHTML() {
+    return '<a class="brand" href="#/"><span class="brand-mark" aria-hidden="true">M<i>/</i>J</span>' +
+      '<span class="brand-name">MAJRA <span class="brand-ar">مجرى</span></span></a>';
+  }
+
+  function langBtn() {
+    return '<button class="util-btn" type="button" data-action="lang" lang="' + (S.lang === 'en' ? 'ar' : 'en') + '" aria-label="' + esc(t('langLabel')) + '">' +
+      icon('globe') + '<span>' + t('langToggle') + '</span></button>';
+  }
+
+  function themeBtn() {
+    return '<button class="util-btn" type="button" data-action="theme">' + icon(S.theme === 'dark' ? 'sun' : 'moon') +
+      '<span>' + (S.theme === 'dark' ? t('lightMode') : t('darkMode')) + '</span></button>';
+  }
+
   function renderHeader() {
     const route = currentRoute()[0] || '';
     const unread = allNotifs().filter((n) => !S.read.includes(n.id)).length;
@@ -151,9 +167,11 @@
       ['majors', t('navMajors'), ['majors', 'major']],
       ['coop', t('navCoop'), ['coop']]
     ];
-    const userBtn = S.user
-      ? '<button class="btn btn-ghost btn-sm" type="button" data-action="logout">' + icon('logout', 'flip-rtl') + '<span>' + esc(t('hello', { n: S.user.name })) + '</span></button>'
-      : '<button class="btn btn-accent btn-sm" type="button" data-action="login">' + icon('user') + '<span>' + t('login') + '</span></button>';
+    const initials = S.user ? S.user.name.split(/\s+/).map((w) => w.charAt(0)).join('').slice(0, 2).toUpperCase() : '';
+    const account = S.user
+      ? '<span class="account"><span class="avatar" aria-hidden="true">' + esc(initials) + '</span><span class="account-name">' + esc(S.user.name) + '</span>' +
+        '<button class="btn btn-ghost btn-sm" type="button" data-action="logout">' + icon('logout', 'flip-rtl') + t('logout') + '</button></span>'
+      : '<a class="btn btn-ghost" href="#/login"' + (route === 'login' ? ' aria-current="page"' : '') + '>' + icon('user') + t('login') + '</a>';
 
     const notifItems = allNotifs().map((n) => {
       const isRead = S.read.includes(n.id);
@@ -161,42 +179,69 @@
     }).join('');
 
     $('#site-header').innerHTML =
-      '<div class="container header-inner">' +
-      '<a class="brand" href="#/"><span class="brand-mark" aria-hidden="true">M<i>/</i>S</span><span class="brand-name">MASAR <span class="brand-ar">مسار</span></span></a>' +
-      '<nav class="main-nav' + (S.menuOpen ? ' open' : '') + '" id="main-nav" aria-label="Main">' +
-      '<ul>' + nav.map((n, i) =>
-        '<li><a class="nav-link" href="#/' + n[0] + '"' + (n[2].includes(route) ? ' aria-current="page"' : '') + '><span class="nav-num">' + pad(i + 1) + '</span>' + n[1] + '</a></li>'
-      ).join('') + '</ul>' +
-      '<div class="nav-extra">' +
-      '<button class="btn btn-ghost btn-sm" type="button" data-action="lang" lang="' + (S.lang === 'en' ? 'ar' : 'en') + '">' + icon('globe') + t('langToggle') + '</button>' +
-      userBtn + '</div>' +
-      '</nav>' +
-      '<div class="header-tools">' +
+      '<div class="utility"><div class="container utility-inner">' +
+      '<p class="utility-note">' + icon('sparkle', 'star') + t('utilityNote', { n: COMPANIES.length }) + '</p>' +
+      '<div class="utility-tools">' +
       '<div class="notif-wrap">' +
-      '<button class="icon-btn" type="button" data-action="notif" aria-expanded="' + S.notifOpen + '" aria-controls="notif-panel" aria-label="' + esc(t('notifications') + (unread ? ' (' + unread + ')' : '')) + '">' + icon('bell') +
-      (unread ? '<span class="badge" aria-hidden="true">' + unread + '</span>' : '') + '</button>' +
+      '<button class="util-btn" type="button" data-action="notif" aria-expanded="' + S.notifOpen + '" aria-controls="notif-panel">' + icon('bell') +
+      '<span>' + t('notifications') + '</span>' + (unread ? '<span class="badge">' + unread + '<span class="sr-only"> unread</span></span>' : '') + '</button>' +
       '<div class="notif-panel" id="notif-panel"' + (S.notifOpen ? '' : ' hidden') + '>' +
       '<div class="notif-head"><h2 class="h4">' + t('notifications') + '</h2>' +
       (unread ? '<button class="link-btn" type="button" data-action="mark-read">' + t('markRead') + '</button>' : '') + '</div>' +
       (notifItems ? '<ul class="notif-list">' + notifItems + '</ul>' : '<p class="muted">' + t('noNotifs') + '</p>') +
       '</div></div>' +
-      '<button class="btn btn-ghost btn-sm desktop-only" type="button" data-action="lang" lang="' + (S.lang === 'en' ? 'ar' : 'en') + '" aria-label="' + esc(t('langLabel')) + '">' + icon('globe') + t('langToggle') + '</button>' +
-      '<button class="icon-btn" type="button" data-action="theme" aria-label="' + esc(S.theme === 'dark' ? t('themeLight') : t('themeDark')) + '">' + icon(S.theme === 'dark' ? 'sun' : 'moon') + '</button>' +
-      '<span class="desktop-only">' + userBtn + '</span>' +
-      '<button class="icon-btn menu-btn" type="button" data-action="menu" aria-expanded="' + S.menuOpen + '" aria-controls="main-nav" aria-label="' + esc(S.menuOpen ? t('close') : t('menu')) + '">' + icon(S.menuOpen ? 'x' : 'menu') + '</button>' +
+      langBtn() + themeBtn() +
+      '</div></div></div>' +
+      '<div class="mainbar"><div class="container mainbar-inner">' + brandHTML() +
+      '<nav class="main-nav" aria-label="Main"><ul>' + nav.map((n, i) =>
+        '<li><a class="nav-link" href="#/' + n[0] + '"' + (n[2].includes(route) ? ' aria-current="page"' : '') + '><span class="nav-num">' + pad(i + 1) + '</span>' + n[1] + '</a></li>'
+      ).join('') + '</ul></nav>' +
+      '<div class="mainbar-actions">' + account +
+      '<a class="btn btn-accent" href="#/companies">' + t('ctaBuild') + icon('arrow', 'flip-rtl') + '</a></div>' +
       '</div></div>';
   }
 
   function renderFooter() {
-    $('#site-footer').innerHTML = '<div class="container footer-inner">' +
-      '<p class="brand-name">MASAR <span class="brand-ar">مسار</span></p>' +
-      '<p class="muted small">' + t('footer') + '</p></div>';
+    const col = (title, links) => '<div class="footer-col"><h2 class="footer-h">' + title + '</h2><ul>' +
+      links.map((l) => '<li><a href="' + l[0] + '">' + l[1] + '</a></li>').join('') + '</ul></div>';
+    $('#site-footer').innerHTML =
+      '<div class="container footer-grid">' +
+      '<div class="footer-brand">' + brandHTML() + '<p class="muted">' + t('footerAbout') + '</p></div>' +
+      col(t('fExplore'), [['#/companies', t('navCompanies')], ['#/majors', t('navMajors')], ['#/coop', t('navCoop')]]) +
+      col(t('fCareer'), [['#/companies', t('ctaBuild')], ['#/assessment', t('assessTitle')], ['#/login', t('login')]]) +
+      '<div class="footer-col"><h2 class="footer-h">' + t('fSettings') + '</h2><div class="footer-tools">' + langBtn() + themeBtn() + '</div></div>' +
+      '</div>' +
+      '<div class="container footer-bottom"><p>© 2026 Majra · مجرى</p><p class="muted small">' + t('footer') + '</p></div>';
   }
 
   /* ---------- Views ---------- */
+  const statHTML = (n, label) => '<div class="stat"><p class="stat-num">' + n + '</p><p class="stat-label">' + label + '</p></div>';
+
+  /* Product preview in the hero: a resume card with the smart gauge. Decorative. */
+  function heroVisual() {
+    const c = findCompany('aramco');
+    const chip = (id, hot) => '<span class="mock-chip' + (hot ? ' hot' : '') + '">' + (hot ? icon('flame') : '') + esc(L(findSkill(id))) + '</span>';
+    return '<div class="hero-visual" aria-hidden="true">' +
+      '<div class="mock-paper">' +
+      '<p class="mock-name">' + (S.lang === 'ar' ? 'سارة القحطاني' : 'Sara Alqahtani') + '</p>' +
+      '<p class="mock-title">' + esc(L(findMajor('petroleum').role)) + '</p>' +
+      '<p class="mock-h">' + t('pvSummary') + '</p><span class="mock-line" style="width:92%"></span><span class="mock-line" style="width:80%"></span>' +
+      '<p class="mock-h">' + t('pvSkills') + '</p><div class="mock-chips">' + chip('reservoir', true) + chip('python') + chip('hse', true) + chip('teamwork') + '</div>' +
+      '<p class="mock-h">' + t('pvExperience') + '</p><span class="mock-line" style="width:88%"></span><span class="mock-line" style="width:70%"></span><span class="mock-line" style="width:76%"></span>' +
+      '</div>' +
+      '<div class="mock-gauge">' +
+      '<div class="mock-gauge-head">' + logoTile(c, 'sm') + '<div><p class="mock-g-title">' + t('gaugeTitle') + '</p><p class="mock-g-sub">' + esc(L(c)) + '</p></div></div>' +
+      '<div class="gauge-meter level-high"><svg viewBox="0 0 120 68"><path class="g-track" d="M10 60 A50 50 0 0 1 110 60" pathLength="100"/>' +
+      '<path class="g-fill" d="M10 60 A50 50 0 0 1 110 60" pathLength="100" stroke-dasharray="78 100"/></svg>' +
+      '<div class="gauge-value"><span class="g-num">78<small>%</small></span><span class="g-label">' + t('gHigh') + '</span></div></div>' +
+      '</div></div>';
+  }
+
   function viewHome() {
     const m = S.homeMajor;
-    return '<section class="hero container">' +
+    const roles = COMPANIES.reduce((n, c) => n + totalOpenings(c), 0);
+    const coops = COMPANIES.filter((c) => c.coop).length;
+    return '<section class="hero"><div class="container hero-grid"><div class="hero-copy">' +
       '<p class="eyebrow">' + icon('sparkle', 'star') + t('eyebrow', { n: COMPANIES.length }) + '</p>' +
       '<h1 class="display" tabindex="-1"><span>' + t('heroA') + '</span> <span><em>' + t('heroB') + '</em> ' + t('heroC') + '</span></h1>' +
       '<p class="lede">' + t('heroSub') + '</p>' +
@@ -205,8 +250,18 @@
       '<div class="chips" role="group" aria-labelledby="sugg-label">' +
       '<button type="button" class="chip" data-action="home-major" data-id="all" aria-pressed="' + (m === 'all') + '">' + t('all') + '</button>' +
       MAJORS.map((mj) => '<button type="button" class="chip" data-action="home-major" data-id="' + mj.id + '" aria-pressed="' + (m === mj.id) + '">' + esc(L(mj)) + '</button>').join('') +
-      '</div></div></section>' +
-      '<section class="container section" aria-labelledby="hiring-title" id="hiring">' + homeGrid() + '</section>';
+      '</div></div></div>' + heroVisual() + '</div></section>' +
+      '<section class="stats-band" aria-label="' + esc(t('statsLabel')) + '"><div class="container stats">' +
+      statHTML(COMPANIES.length, t('stCompanies')) + statHTML(MAJORS.length, t('stMajors')) + statHTML(roles, t('stRoles')) + statHTML(coops, t('stCoop')) +
+      '</div></section>' +
+      '<section class="container section" aria-labelledby="hiring-title" id="hiring">' + homeGrid() + '</section>' +
+      '<section class="how" aria-labelledby="how-title"><div class="container">' +
+      '<p class="eyebrow">' + icon('sparkle', 'star') + t('howEyebrow') + '</p><h2 class="h2" id="how-title">' + t('howTitle') + '</h2>' +
+      '<ol class="how-steps">' + [1, 2, 3, 4].map((i) => '<li><span class="how-num" aria-hidden="true">' + pad(i) + '</span><h3 class="h4">' + t('how' + i + 'T') + '</h3><p class="muted">' + t('how' + i + 'D') + '</p></li>').join('') + '</ol>' +
+      '</div></section>' +
+      '<section class="container section"><div class="coop-banner">' +
+      '<div><p class="eyebrow">' + icon('cap') + t('navCoop') + '</p><h2 class="h2">' + t('coopBannerT') + '</h2><p class="lede">' + t('coopBannerD', { n: coops }) + '</p></div>' +
+      '<a class="btn btn-accent btn-lg" href="#/coop">' + t('coopBannerBtn') + icon('arrow', 'flip-rtl') + '</a></div></section>';
   }
 
   function homeGrid() {
@@ -616,15 +671,9 @@
       '<div class="panel gauge-card" id="gauge">' + gaugeHTML() + '</div>' +
       '<div class="panel preview-card">' +
       '<div class="preview-head"><h2 class="h3">' + icon('eye') + t('preview') + '</h2>' +
-      '<button type="button" class="btn btn-ghost btn-sm preview-toggle" data-action="toggle-preview" aria-expanded="' + S.previewOpen + '" aria-controls="preview-wrap">' + (S.previewOpen ? t('hidePreview') : t('showPreview')) + '</button></div>' +
-      '<div class="preview-wrap' + (S.previewOpen ? ' open' : '') + '" id="preview-wrap"><div class="resume-paper fmt-' + fmt + '" id="preview" lang="' + S.lang + '" dir="' + (S.lang === 'ar' ? 'rtl' : 'ltr') + '">' + previewHTML() + '</div></div>' +
-      '</div></aside></div>' +
-      '<a class="gauge-mini" href="#gauge" id="gauge-mini" data-action="jump-gauge">' + miniGauge() + '</a>';
-  }
-
-  function miniGauge() {
-    const a = analyze();
-    return '<span class="g-dot level-' + a.level + '" aria-hidden="true"></span><b>' + a.score + '%</b> ' + t(a.level === 'high' ? 'gHigh' : a.level === 'mid' ? 'gMid' : 'gLow') + '<span class="muted"> · ' + t('gaugeTitle') + '</span>';
+      '</div>' +
+      '<div class="preview-wrap" id="preview-wrap"><div class="resume-paper fmt-' + fmt + '" id="preview" lang="' + S.lang + '" dir="' + (S.lang === 'ar' ? 'rtl' : 'ltr') + '">' + previewHTML() + '</div></div>' +
+      '</div></aside></div>';
   }
 
   function refreshBuilder(opts) {
@@ -642,8 +691,6 @@
       if (S.lastLevel && S.lastLevel !== a.level) announce(a.score + '% — ' + t(a.level === 'high' ? 'gHigh' : a.level === 'mid' ? 'gMid' : 'gLow'));
       S.lastLevel = a.level;
     }
-    const m = $('#gauge-mini');
-    if (m) m.innerHTML = miniGauge();
     saveDraft();
   }
 
@@ -714,7 +761,7 @@
     S.extraNotifs = [n].concat(S.extraNotifs).slice(0, 5);
     store.set('notifs', S.extraNotifs);
     toast(t('submitted', { c: L(c) }));
-    location.hash = '#/assessment';
+    navigate('assessment');
   }
 
   /* ---------- Assessment ---------- */
@@ -736,7 +783,7 @@
     }
     const c = findCompany(S.submission.companyId);
     if (S.quiz && !S.quiz.done) return viewQuestion(c);
-    if (S.result && S.result.submittedAt === S.submission.at) return viewResults(c);
+    if (S.result && S.result.submittedAt === S.submission.at) return viewDone(c);
     const plan = quizPlan();
     const skillName = (id) => (id === 'general' ? t('general') : L(findSkill(id)));
     return '<section class="container page-head">' + stepper(3) +
@@ -820,7 +867,9 @@
     });
     const skills = Object.keys(per).map((k) => per[k]);
     const correct = skills.reduce((n, s) => n + s.correct, 0);
-    S.result = { submittedAt: S.submission.at, skills: skills, correct: correct, total: qz.questions.length, score: Math.round(correct / qz.questions.length * 100), timeUp: !!timeUp };
+    /* Scores go to the company only; the candidate sees a confirmation. */
+    S.result = { submittedAt: S.submission.at, at: Date.now(), skills: skills, correct: correct, total: qz.questions.length,
+      answered: qz.answers.filter((a) => a != null).length, score: Math.round(correct / qz.questions.length * 100), timeUp: !!timeUp };
     store.set('result', S.result);
     qz.done = true;
     S.quiz = null;
@@ -828,71 +877,118 @@
     if (currentRoute()[0] === 'assessment') render();
   }
 
-  function viewResults(c) {
+  function viewDone(c) {
     const r = S.result;
-    const v = r.score >= 70 ? 'vHigh' : r.score >= 40 ? 'vMid' : 'vLow';
-    const lvl = r.score >= 70 ? 'high' : r.score >= 40 ? 'mid' : 'low';
     const sub = S.submission;
-    return '<section class="container page-head">' + stepper(4) +
-      '<h1 class="h1" tabindex="-1">' + t('resultsTitle') + '</h1>' +
-      '<p class="lede">' + esc(t(v, { c: L(c) })) + '</p></section>' +
-      '<section class="container section results">' +
-      '<div class="panel score-card level-' + lvl + '"><p class="label">' + t('overall') + '</p><p class="big-score">' + r.score + '<small>%</small></p>' +
-      '<p class="muted">' + t('correct', { a: r.correct, b: r.total }) + '</p></div>' +
-      '<ul class="panel skill-scores">' + r.skills.map((s) => {
-        const pct = Math.round(s.correct / s.total * 100);
-        const name = s.id === 'general' ? t('general') : L(findSkill(s.id));
-        const l = pct >= 70 ? 'high' : pct >= 40 ? 'mid' : 'low';
-        return '<li><div class="row"><span>' + esc(name) + '</span><span class="muted">' + t('correct', { a: s.correct, b: s.total }) + '</span></div>' +
-          '<div class="bar level-' + l + '" role="meter" aria-label="' + esc(name) + '" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct + '" aria-valuetext="' + pct + '%"><span style="width:' + pct + '%"></span></div></li>';
-      }).join('') + '</ul>' +
-      '<div class="result-actions">' +
-      '<button type="button" class="btn btn-ghost" data-action="retake">' + t('retake') + '</button>' +
-      '<a class="btn btn-ghost" href="#/builder/' + sub.companyId + '/' + sub.format + (sub.coop ? '/coop' : '') + '">' + t('editResume') + '</a>' +
-      '<a class="btn btn-accent" href="#/companies">' + t('explore') + icon('arrow', 'flip-rtl') + '</a></div>' +
-      '</section>';
+    const fmt = FORMATS.find((f) => f.id === sub.format);
+    const when = new Date(r.at || sub.at).toLocaleString(S.lang === 'ar' ? 'ar-u-nu-latn' : 'en-GB', { dateStyle: 'medium', timeStyle: 'short' });
+    const fact = (k, v) => '<div><dt>' + k + '</dt><dd>' + esc(v) + '</dd></div>';
+    return '<section class="container page-head done">' + stepper(4) +
+      '<div class="done-card panel"><span class="done-icon">' + icon('check') + '</span>' +
+      '<h1 class="h1" tabindex="-1">' + t('doneTitle') + '</h1>' +
+      '<p class="lede">' + esc(t('doneSub', { c: L(c) })) + '</p>' +
+      (r.timeUp ? '<p class="note">' + icon('clock') + t('doneTimeUp') + '</p>' : '') +
+      '<dl class="done-facts">' + fact(t('dCompany'), L(c)) + fact(t('dFormat'), fmt ? t(fmt.name) : '') +
+      fact(t('dAnswered'), t('answeredOf', { a: r.answered != null ? r.answered : r.total, b: r.total })) + fact(t('dWhen'), when) + '</dl>' +
+      '<div class="result-actions"><a class="btn btn-accent" href="#/companies">' + t('explore') + icon('arrow', 'flip-rtl') + '</a>' +
+      '<a class="btn btn-ghost" href="#/">' + t('goHome') + '</a></div>' +
+      '</div></section>';
   }
 
   function viewNotFound() {
     return '<section class="container page-head"><h1 class="h1" tabindex="-1">' + t('notFound') + '</h1><a class="btn btn-accent" href="#/">' + t('goHome') + '</a></section>';
   }
 
-  /* ---------- Login dialog ---------- */
-  function openLogin() {
-    const dlg = $('#login-dialog');
-    dlg.innerHTML = '<form class="login-form" id="login-form" novalidate>' +
-      '<div class="modal-head"><h2 class="h3" id="login-title">' + t('loginTitle') + '</h2>' +
-      '<button type="button" class="icon-btn" data-action="close-login" aria-label="' + esc(t('close')) + '">' + icon('x') + '</button></div>' +
+  /* ---------- Login page ---------- */
+  function loginField(id, label, type, auto, help) {
+    const described = id + '-err' + (help ? ' ' + id + '-help' : '');
+    const control = type === 'password'
+      ? '<div class="pw-wrap"><input id="' + id + '" type="password" autocomplete="' + auto + '" required dir="ltr" aria-describedby="' + described + '">' +
+        '<button type="button" class="icon-btn" data-action="pw-toggle" aria-pressed="false" aria-label="' + esc(t('showPw')) + '">' + icon('eye') + '</button></div>'
+      : '<input id="' + id + '" type="' + type + '" autocomplete="' + auto + '" required dir="' + (type === 'email' ? 'ltr' : 'auto') + '" aria-describedby="' + described + '">';
+    return '<div class="field"><label for="' + id + '">' + label + '</label>' + control +
+      (help ? '<p class="help" id="' + id + '-help">' + help + '</p>' : '') +
+      '<p class="field-error" id="' + id + '-err" hidden></p></div>';
+  }
+
+  function viewLogin() {
+    const signup = S.loginMode === 'signup';
+    const tab = (id, label, sel) => '<button type="button" role="tab" id="tab-' + id + '" class="tab" aria-selected="' + sel + '" aria-controls="login-form" data-action="login-tab" data-id="' + id + '">' + label + '</button>';
+    return '<section class="login-page"><div class="container login-grid">' +
+      '<div class="login-side">' +
+      '<p class="eyebrow">' + icon('sparkle', 'star') + 'MAJRA · مجرى</p>' +
+      '<h1 class="h1" tabindex="-1">' + (signup ? t('signupHead') : t('loginHead')) + '</h1>' +
+      '<p class="lede">' + t('loginLede') + '</p>' +
+      '<ul class="benefits">' + ['b1', 'b2', 'b3'].map((k) => '<li>' + icon('checkCircle') + t(k) + '</li>').join('') + '</ul>' +
+      '</div>' +
+      '<div class="login-card panel">' +
+      '<div class="tabs" role="tablist" aria-label="' + esc(t('loginTitle')) + '">' + tab('signin', t('tabSignin'), !signup) + tab('signup', t('tabSignup'), signup) + '</div>' +
+      '<form id="login-form" class="login-form" role="tabpanel" aria-labelledby="tab-' + (signup ? 'signup' : 'signin') + '" novalidate>' +
+      (signup ? loginField('l-name', t('fName'), 'text', 'name') : '') +
+      loginField('l-email', t('fEmail'), 'email', 'email') +
+      loginField('l-pass', t('password'), 'password', signup ? 'new-password' : 'current-password', signup ? t('passHelp') : '') +
+      (signup ? '' : '<div class="login-row"><label class="check"><input type="checkbox" id="l-remember" checked> ' + t('remember') + '</label>' +
+        '<button type="button" class="link-btn" data-action="forgot">' + t('forgot') + '</button></div>') +
+      '<button type="submit" class="btn btn-accent btn-lg wide">' + (signup ? t('signupBtn') : t('loginBtn')) + '</button>' +
       '<p class="muted small">' + t('loginSub') + '</p>' +
-      '<div class="field"><label for="l-email">' + t('fEmail') + '</label><input id="l-email" type="email" autocomplete="email" required dir="ltr" aria-describedby="l-email-err"><p class="field-error" id="l-email-err" hidden></p></div>' +
-      '<div class="field"><label for="l-pass">' + t('password') + '</label><div class="pw-wrap"><input id="l-pass" type="password" autocomplete="current-password" required dir="ltr">' +
-      '<button type="button" class="icon-btn" data-action="pw-toggle" aria-pressed="false" aria-label="' + esc(t('showPw')) + '">' + icon('eye') + '</button></div></div>' +
-      '<button type="submit" class="btn btn-accent btn-lg wide">' + t('loginBtn') + '</button></form>';
-    dlg.showModal();
-    $('#l-email').focus();
+      '</form></div></div></section>';
   }
 
   function doLogin() {
-    const email = $('#l-email').value.trim();
-    const err = $('#l-email-err');
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      err.hidden = false; err.innerHTML = icon('alert') + esc(t('errEmail'));
-      $('#l-email').setAttribute('aria-invalid', 'true'); $('#l-email').focus();
+    const signup = S.loginMode === 'signup';
+    const nameEl = $('#l-name');
+    const emailEl = $('#l-email');
+    const passEl = $('#l-pass');
+    document.querySelectorAll('#login-form .field-error').forEach((el) => { el.hidden = true; });
+    document.querySelectorAll('#login-form [aria-invalid]').forEach((el) => el.removeAttribute('aria-invalid'));
+    const errs = [];
+    if (signup && !nameEl.value.trim()) errs.push(['l-name', t('errName')]);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailEl.value.trim())) errs.push(['l-email', t('errEmail')]);
+    if (!passEl.value) errs.push(['l-pass', t('errPass')]);
+    else if (signup && passEl.value.length < 8) errs.push(['l-pass', t('errPassLen')]);
+    if (errs.length) {
+      errs.forEach((e) => {
+        const m = $('#' + e[0] + '-err');
+        m.hidden = false; m.innerHTML = icon('alert') + esc(e[1]);
+        $('#' + e[0]).setAttribute('aria-invalid', 'true');
+      });
+      $('#' + errs[0][0]).focus();
       return;
     }
-    const raw = email.split('@')[0].replace(/[._-]+/g, ' ');
-    const name = raw.replace(/\b\w/g, (ch) => ch.toUpperCase());
+    const email = emailEl.value.trim();
+    const name = signup ? nameEl.value.trim() : email.split('@')[0].replace(/[._-]+/g, ' ').replace(/\b\w/g, (ch) => ch.toUpperCase());
     S.user = { name: name, email: email };
     store.set('user', S.user);
-    if (S.draft && !S.draft.data.email) { S.draft.data.email = email; S.draft.data.name = S.draft.data.name || name; saveDraft(); }
-    $('#login-dialog').close();
-    renderHeader();
+    if (S.draft) {
+      if (!S.draft.data.email) S.draft.data.email = email;
+      if (!S.draft.data.name) S.draft.data.name = name;
+      saveDraft();
+    }
     toast(t('welcome', { n: name }));
+    const back = S.afterLogin && S.afterLogin !== 'login' ? S.afterLogin : '';
+    navigate(back);
   }
 
-  /* ---------- Router ---------- */
+  /* ---------- Router ----------
+     Navigation is kept in memory (S.path) so it also works inside an embedded preview.
+     When opened directly, the address bar mirrors the route as #/path for deep links. */
+  const IN_FRAME = (() => { try { return window.self !== window.top; } catch (e) { return true; } })();
+  S.path = location.hash.indexOf('#/') === 0 ? location.hash.slice(2) : '';
+
   function currentRoute() {
-    return location.hash.replace(/^#\/?/, '').split('/').filter(Boolean).map((p) => { try { return decodeURIComponent(p); } catch (e) { return p; } });
+    return S.path.split('/').filter(Boolean).map((p) => { try { return decodeURIComponent(p); } catch (e) { return p; } });
+  }
+
+  function navigate(path, replace) {
+    path = String(path).replace(/^#?\/?/, '');
+    if (path === 'login' && currentRoute()[0] !== 'login') S.afterLogin = S.path;
+    S.path = path;
+    try {
+      const url = IN_FRAME ? undefined : '#/' + path;
+      if (replace) history.replaceState({ path: path }, '', url);
+      else history.pushState({ path: path }, '', url);
+    } catch (e) { /* history can be blocked in some frames */ }
+    onRoute();
   }
 
   function render() {
@@ -909,6 +1005,7 @@
       case 'resume': html = viewFormat(a, b === 'coop'); break;
       case 'builder': html = viewBuilder(a, b, c === 'coop'); break;
       case 'assessment': html = viewAssessment(); break;
+      case 'login': html = viewLogin(); break;
       default: html = viewNotFound();
     }
     document.body.dataset.route = r || 'home';
@@ -918,7 +1015,6 @@
 
   function onRoute() {
     S.notifOpen = false;
-    S.menuOpen = false;
     renderHeader();
     render();
     if (S.firstRender) { S.firstRender = false; return; }
@@ -931,7 +1027,7 @@
     const root = document.documentElement;
     root.lang = S.lang;
     root.dir = S.lang === 'ar' ? 'rtl' : 'ltr';
-    document.title = S.lang === 'ar' ? 'مسار — وظائف في السعودية' : 'Masar — Saudi Careers';
+    document.title = S.lang === 'ar' ? 'مجرى — وظائف في السعودية' : 'Majra — Saudi Careers';
     $('#skip-link').textContent = t('skip');
   }
 
@@ -947,8 +1043,34 @@
     render();
   }
 
+  /* Always show the desktop layout: on narrow screens the 1280px page is scaled down to fit. */
+  const DESKTOP_WIDTH = 1280;
+  function fitDesktop() {
+    const w = document.documentElement.clientWidth;
+    const b = document.body;
+    if (w > 0 && w < DESKTOP_WIDTH - 100) {
+      b.style.width = DESKTOP_WIDTH + 'px';
+      b.style.zoom = String(w / DESKTOP_WIDTH);
+    } else {
+      b.style.width = '';
+      b.style.zoom = '';
+    }
+  }
+
   /* ---------- Events ---------- */
+  function refocus(el, sel) {
+    const inFooter = el && el.closest('#site-footer');
+    const target = $((inFooter ? '#site-footer ' : '#site-header ') + sel);
+    if (target) target.focus();
+  }
+
   document.addEventListener('click', (e) => {
+    const link = e.target.closest('a[href^="#/"]');
+    if (link && !e.metaKey && !e.ctrlKey && !e.shiftKey && e.button === 0) {
+      e.preventDefault();
+      navigate(link.getAttribute('href').slice(2));
+      return;
+    }
     const el = e.target.closest('[data-action]');
     if (!el) {
       if (S.notifOpen && !e.target.closest('.notif-wrap')) { S.notifOpen = false; renderHeader(); }
@@ -959,22 +1081,27 @@
       case 'lang':
         S.lang = S.lang === 'en' ? 'ar' : 'en';
         store.setRaw('lang', S.lang);
-        S.menuOpen = false;
         renderAll();
-        { const btn = $('.header-tools [data-action="lang"]'); if (btn && btn.offsetParent) btn.focus(); }
+        refocus(el, '[data-action="lang"]');
         break;
       case 'theme':
         S.theme = S.theme === 'dark' ? 'light' : 'dark';
         store.setRaw('theme', S.theme);
         applyTheme();
         renderHeader();
-        $('[data-action="theme"]').focus();
+        renderFooter();
+        refocus(el, '[data-action="theme"]');
         break;
-      case 'login': S.menuOpen = false; renderHeader(); openLogin(); break;
-      case 'close-login': $('#login-dialog').close(); break;
       case 'logout':
         S.user = null; store.set('user', null); renderHeader(); toast(t('logout'));
+        { const l = $('#site-header a[href="#/login"]'); if (l) l.focus(); }
         break;
+      case 'login-tab':
+        S.loginMode = el.dataset.id;
+        render();
+        $('#tab-' + S.loginMode).focus();
+        break;
+      case 'forgot': toast(t('forgotMsg')); break;
       case 'pw-toggle': {
         const p = $('#l-pass');
         const show = p.type === 'password';
@@ -994,11 +1121,6 @@
         store.set('read', S.read);
         renderHeader();
         $('[data-action="notif"]').focus();
-        break;
-      case 'menu':
-        S.menuOpen = !S.menuOpen;
-        renderHeader();
-        $('[data-action="menu"]').focus();
         break;
       case 'home-major': {
         S.homeMajor = el.dataset.id;
@@ -1043,8 +1165,7 @@
         Object.keys(blank).forEach((k) => { blank[k] = ''; });
         S.draft.data[list].push(blank);
         const idx = S.draft.data[list].length - 1;
-        const firstKey = Object.keys(blank)[0];
-        rerenderSections('#f-' + list + '-' + idx + '-' + firstKey);
+        rerenderSections('#f-' + list + '-' + idx + '-' + Object.keys(blank)[0]);
         break;
       }
       case 'remove-item': {
@@ -1059,20 +1180,13 @@
         if (f) { f.scrollIntoView({ block: 'center' }); f.focus(); }
         break;
       }
-      case 'jump-gauge': {
-        e.preventDefault();
-        const g = $('#gauge');
-        g.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
-        break;
-      }
-      case 'toggle-preview': {
-        S.previewOpen = !S.previewOpen;
-        $('#preview-wrap').classList.toggle('open', S.previewOpen);
-        el.setAttribute('aria-expanded', String(S.previewOpen));
-        el.textContent = S.previewOpen ? t('hidePreview') : t('showPreview');
-        break;
-      }
       case 'pdf': {
+        if (IN_FRAME) {
+          const note = $('#pdf-hint');
+          note.textContent = t('pdfFrame');
+          note.classList.add('note');
+          break;
+        }
         const old = document.title;
         const nm = S.draft.data.name.trim();
         document.title = (nm ? nm + ' - ' : '') + (S.lang === 'ar' ? 'السيرة الذاتية' : 'Resume');
@@ -1081,10 +1195,6 @@
         break;
       }
       case 'start-quiz': startQuiz(); $('#q-text').focus(); break;
-      case 'retake':
-        S.result = null; store.set('result', null);
-        render(); $('#main h1').focus();
-        break;
       default: break;
     }
   });
@@ -1094,7 +1204,7 @@
     if (f.dataset.form === 'search') {
       e.preventDefault();
       const q = f.q.value.trim();
-      if (q) location.hash = '#/search/' + encodeURIComponent(q);
+      if (q) navigate('search/' + encodeURIComponent(q));
       else f.q.focus();
     } else if (f.id === 'resume-form') {
       e.preventDefault();
@@ -1138,15 +1248,20 @@
       if (addTags(list, el.value)) refreshBuilder({ tags: true });
       el.value = '';
     }
-    if (e.key === 'Escape') {
-      if (S.notifOpen) { S.notifOpen = false; renderHeader(); $('[data-action="notif"]').focus(); }
-      else if (S.menuOpen) { S.menuOpen = false; renderHeader(); $('[data-action="menu"]').focus(); }
-    }
+    if (e.key === 'Escape' && S.notifOpen) { S.notifOpen = false; renderHeader(); $('[data-action="notif"]').focus(); }
   });
 
-  window.addEventListener('hashchange', onRoute);
+  window.addEventListener('popstate', (e) => {
+    S.path = (e.state && typeof e.state.path === 'string') ? e.state.path : (location.hash.indexOf('#/') === 0 ? location.hash.slice(2) : '');
+    onRoute();
+  });
+  window.addEventListener('hashchange', () => {
+    if (location.hash.indexOf('#/') === 0 && location.hash.slice(2) !== S.path) { S.path = location.hash.slice(2); onRoute(); }
+  });
+  window.addEventListener('resize', fitDesktop);
 
-  /* Resume a running quiz timer after a reload is not supported: the quiz lives in memory only. */
+  try { history.replaceState({ path: S.path }, ''); } catch (e) { /* ignore */ }
   renderAll();
+  fitDesktop();
   S.firstRender = false;
 })();
