@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en" dir="ltr" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Masar — Saudi Careers</title>
+  <meta name="description" content="Find roles at Saudi companies, build a resume matched to what they want, and prove your skills.">
+  <meta name="color-scheme" content="dark light">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <script>
+    /* Apply saved theme and language before first paint to avoid a flash. */
+    (function () {
+      try {
+        var t = localStorage.getItem('masar.theme');
+        var l = localStorage.getItem('masar.lang');
+        if (t) document.documentElement.dataset.theme = t;
+        if (l === 'ar') { document.documentElement.lang = 'ar'; document.documentElement.dir = 'rtl'; }
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main" id="skip-link">Skip to main content</a>
+  <header class="site-header" id="site-header"></header>
+  <main id="main" tabindex="-1"></main>
+  <footer class="site-footer" id="site-footer"></footer>
+
+  <dialog class="modal" id="login-dialog" aria-labelledby="login-title"></dialog>
+  <div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="true"></div>
+
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/i18n.js"></script>
+  <script src="assets/js/icons.js"></script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
